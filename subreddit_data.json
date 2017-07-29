@@ -1,0 +1,17 @@
+{
+    "Valid Threads": {},
+    "Users": {
+        "ghi": {
+            "TLC Count": 4,
+            "Flair": "Testity Test"
+        },
+        "abc": {
+            "TLC Count": 2,
+            "Flair": "Testity Test"
+        },
+        "leftpig": {
+            "TLC Count": 2,
+            "Flair": "Testity Test"
+        }
+    }
+}

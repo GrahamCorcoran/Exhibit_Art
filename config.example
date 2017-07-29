@@ -1,7 +1,10 @@
+# Rename file to config.py
 # Fill out the below information per your bots login.
+
 username = ""
 password = ""
 client_id = ""
 client_secret = ""
 user_agent = ""
+filename = "subreddit_data.json"
 
