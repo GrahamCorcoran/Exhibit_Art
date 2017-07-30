@@ -25,8 +25,27 @@ def add_comment(comment):
         if comment in subreddit_data["Comments"]:
             pass
         else:
-            subreddit_data["Comments"][comment] = True
+            subreddit_data["Comments"].append(comment)
             write_to_json(subreddit_data)
+
+
+def change_flair(flair_text, tlc_count):
+    try:
+        flair = flair_text.split(" - ")[0] + " - " + str(tlc_count)
+        if not flair_text.isalpha():
+            flair = str(tlc_count)
+    except AttributeError:
+        flair = str(tlc_count)
+    return flair
+
+
+def set_flair(subreddit):
+    with open(config.filename, "r") as f:
+        subreddit_data = json.load(f)
+        for user in subreddit_data['Users']:
+            flair = subreddit_data['Users'][user]['Flair']
+            subreddit.flair.set(user, flair)
+
 
 
 def write_to_json(data):
@@ -66,66 +85,62 @@ def user_tracker(comment):
         submission = str(comment.submission)
         subreddit_data = json.load(f)
 
+        # If a user already exists
         if user in subreddit_data["Users"]:
-            subreddit_data["Users"][user]["TLC Count"] += 1
-            subreddit_data["Users"][user]["Flair"] = "Testity Test"
             if submission not in subreddit_data["Users"][user]["Threads Participated"]:
                 subreddit_data["Users"][user]["Threads Participated"].append(submission)
+
+            subreddit_data["Users"][user]["TLC Count"] = len(
+                subreddit_data["Users"][user]["Threads Participated"])
+
+            subreddit_data["Users"][user]["Flair"] = change_flair(
+                comment.author_flair_text, subreddit_data["Users"][user]["TLC Count"])
             print("Found!")
 
+        # Creating a user for the first time.
         else:
             subreddit_data["Users"][user] = {}
             subreddit_data["Users"][user]["TLC Count"] = 1
-            subreddit_data["Users"][user]["Flair"] = "Testity test"
             subreddit_data["Users"][user]["Threads Participated"] = [submission]
+
+            subreddit_data["Users"][user]["Flair"] = change_flair(
+                comment.author_flair_text, subreddit_data["Users"][user]["TLC Count"])
             print("Not found, created for next time!")
 
         write_to_json(subreddit_data)
-    pass
 
 
 # Main function very incomplete.
 def main(r):
-    subreddit = r.subreddit("Exhibit_Art")
-    for comment in subreddit.comments(limit=1000):
-        # If comment already has been worked; continues to next.
-        if comment_check(str(comment)):
-            continue
-        # Adds comment to list of worked comments.
-        add_comment(str(comment))
-        # If comment isn't top level comment, ignores.
-        if not comment.is_root:
-            continue
-        # Verifies that this is in fact a weekly contribution thread.
-        # ** This also causes massive slowdown, find out if there's a way to fix that.
-        if "contribution" not in comment.submission.link_flair_text.lower():
-            continue
-        # Pass this to user_tracker, to add this to the users stats.
-        user_tracker(comment)
+    try:
+        subreddit = r.subreddit("Exhibit_Art")
+        for comment in subreddit.comments(limit=1000):
+            # If comment already has been worked; continues to next.
+            if comment_check(str(comment)):
+                continue
 
+            # Adds comment to list of worked comments.
+            add_comment(str(comment))
 
+            # If comment isn't top level comment, ignores.
+            if not comment.is_root:
+                continue
 
+            # Verifies that this is in fact a weekly contribution thread.
+            # ** This also causes massive slowdown, find out if there's a way to fix that.
+            if "contribution" not in comment.submission.link_flair_text.lower():
+                continue
 
-
-"""
-    with open(config.filename, "r") as f:
-        subreddit_data = json.load(f)
-        if author in subreddit_data["Users"]:
-            subreddit_data["Users"][author]["TLC Count"] += 1
-            subreddit_data["Users"][author]["Flair"] = "Testity Test"
-            print("Found!")
-        else:
-            subreddit_data["Users"][author] = {}
-            subreddit_data["Users"][author]["TLC Count"] = 1
-            subreddit_data["Users"][author]["Flair"] = "Testity test"
-            print("Not found, created for next time!")
-        write_to_json(subreddit_data)
-    pass
-"""
+            # Pass this to user_tracker, to add this to the users stats.
+            user_tracker(comment)
+        set_flair(subreddit)
+        time.sleep(60)
+    except Exception as e:
+        print(e)
 
 
 r = login()
-
 main(r)
+
 
 
