@@ -3,6 +3,22 @@ import config
 import json
 import time
 
+
+class load(object):
+    def __init__(self, filename):
+        self.filename = filename
+
+        with open(self.filename, 'r') as f:
+            self.data = json.load(f)
+
+    def __enter__(self):
+        return self.data
+
+    def __exit__(self, type, value, tb):
+        with open(self.filename, 'w') as f:
+            json.dump(self.data, f, indent=4)
+
+
 def login():
     """
     Returns a reddit instance using your bot login information in config.py
@@ -15,19 +31,13 @@ def login():
                        user_agent=config.user_agent)
 
 
-def read_config():
-    with open(config.filename, "r") as f:
-        return json.load(f)
-
-
 def add_comment(comment):
     """
     Takes a top level comment and adds it to filename (set in config).
     """
-    subreddit_data = read_config()
-    if comment not in subreddit_data["Comments"]:
-        subreddit_data["Comments"].append(comment)
-        write_to_json(subreddit_data)
+    with load(config.filename) as subreddit_data:
+        if comment not in subreddit_data["Comments"]:
+            subreddit_data["Comments"].append(comment)
 
 
 def get_flair(flair_text, tlc_count):
@@ -46,18 +56,10 @@ def set_flair(subreddit):
     """
     Modifies all flairs in json file to values in format <alpha> - <number> or <number>
     """
-    subreddit_data = read_config()
-    for user in subreddit_data['Users']:
-        flair = subreddit_data['Users'][user]['Flair']
-        subreddit.flair.set(user, flair)
-
-
-def write_to_json(data):
-    """
-    Writes data to filename (set in config).
-    """
-    with open(config.filename, 'w') as f:
-        json.dump(data, f, indent=4)
+    with load(config.filename) as subreddit_data:
+        for user in subreddit_data['Users']:
+            flair = subreddit_data['Users'][user]['Flair']
+            subreddit.flair.set(user, flair)
 
 
 def has_user(author):
@@ -65,8 +67,8 @@ def has_user(author):
     :param author: String of a Reddit Username
     :return: True if author is in filename (set in config), else false.
     """
-    subreddit_data = read_config()
-    return author in subreddit_data["Users"]
+    with load(config.filename) as subreddit_data:
+        return author in subreddit_data["Users"]
 
 
 def has_comment(commentid):
@@ -74,44 +76,42 @@ def has_comment(commentid):
     :param commentid: CommentID to check.
     :return: True if CommentID is in filename, else false.
     """
-    subreddit_data = read_config()
-    return commentid in subreddit_data["Comments"]
+    with load(config.filename) as subreddit_data:
+        return commentid in subreddit_data["Comments"]
 
 
 def track_user(comment):
     user = str(comment.author)
     submission = str(comment.submission)
-    subreddit_data = read_config()
+    with load(config.filename) as subreddit_data:
 
-    # If a user already exists
-    if user in subreddit_data["Users"]:
-        if submission not in subreddit_data["Users"][user]["Threads Participated"]:
-            subreddit_data["Users"][user]["Threads Participated"].append(submission)
+        # If a user already exists
+        if user in subreddit_data["Users"]:
+            if submission not in subreddit_data["Users"][user]["Threads Participated"]:
+                subreddit_data["Users"][user]["Threads Participated"].append(submission)
 
-        subreddit_data["Users"][user]["TLC Count"] = len(
-            subreddit_data["Users"][user]["Threads Participated"])
+            subreddit_data["Users"][user]["TLC Count"] = len(
+                subreddit_data["Users"][user]["Threads Participated"])
 
-        subreddit_data["Users"][user]["Flair"] = get_flair(
-            comment.author_flair_text, subreddit_data["Users"][user]["TLC Count"])
-        print("Found!")
+            subreddit_data["Users"][user]["Flair"] = get_flair(
+                comment.author_flair_text, subreddit_data["Users"][user]["TLC Count"])
+            print("Found!")
 
-    # Creating a user for the first time.
-    else:
-        subreddit_data["Users"][user] = {}
-        subreddit_data["Users"][user]["TLC Count"] = 1
-        subreddit_data["Users"][user]["Threads Participated"] = [submission]
+        # Creating a user for the first time.
+        else:
+            subreddit_data["Users"][user] = {}
+            subreddit_data["Users"][user]["TLC Count"] = 1
+            subreddit_data["Users"][user]["Threads Participated"] = [submission]
 
-        subreddit_data["Users"][user]["Flair"] = get_flair(
-            comment.author_flair_text, subreddit_data["Users"][user]["TLC Count"])
-        print("Not found, created for next time!")
-
-    write_to_json(subreddit_data)
+            subreddit_data["Users"][user]["Flair"] = get_flair(
+                comment.author_flair_text, subreddit_data["Users"][user]["TLC Count"])
+            print("Not found, created for next time!")
 
 
 def main(r):
     try:
         subreddit = r.subreddit("Exhibit_Art")
-        for comment in subreddit.comments(limit=1000):
+        for comment in subreddit.comments(limit=60):
             # If comment already has been worked; continues to next.
             if has_comment(str(comment)):
                 continue
