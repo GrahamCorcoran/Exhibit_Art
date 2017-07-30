@@ -110,7 +110,6 @@ def user_tracker(comment):
         write_to_json(subreddit_data)
 
 
-# Main function very incomplete.
 def main(r):
     try:
         subreddit = r.subreddit("Exhibit_Art")
@@ -133,7 +132,9 @@ def main(r):
 
             # Pass this to user_tracker, to add this to the users stats.
             user_tracker(comment)
+        # After updating, sets all user flairs.
         set_flair(subreddit)
+        # Waits one minute
         time.sleep(60)
     except Exception as e:
         print(e)
