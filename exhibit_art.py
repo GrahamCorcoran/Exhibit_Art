@@ -29,7 +29,7 @@ def add_comment(comment):
             write_to_json(subreddit_data)
 
 
-def change_flair(flair_text, tlc_count):
+def flair_creator(flair_text, tlc_count):
     """
     :param flair_text: Old Flair Text
     :param tlc_count: Count of top level comments user has.
@@ -71,9 +71,7 @@ def user_check(author):
     """
     with open(config.filename, "r") as f:
         subreddit_data = json.load(f)
-        if author in subreddit_data["Users"]:
-            return True
-        else: return False
+        return author in subreddit_data["Users"]
 
 
 def comment_check(commentid):
@@ -83,10 +81,10 @@ def comment_check(commentid):
     """
     with open(config.filename, "r") as f:
         subreddit_data = json.load(f)
-        return True if commentid in subreddit_data["Comments"] else False
+        return commentid in subreddit_data["Comments"]
 
 
-def user_tracker(comment):
+def track_user(comment):
     with open(config.filename, "r") as f:
 
         user = str(comment.author)
@@ -101,7 +99,7 @@ def user_tracker(comment):
             subreddit_data["Users"][user]["TLC Count"] = len(
                 subreddit_data["Users"][user]["Threads Participated"])
 
-            subreddit_data["Users"][user]["Flair"] = change_flair(
+            subreddit_data["Users"][user]["Flair"] = flair_creator(
                 comment.author_flair_text, subreddit_data["Users"][user]["TLC Count"])
             print("Found!")
 
@@ -111,7 +109,7 @@ def user_tracker(comment):
             subreddit_data["Users"][user]["TLC Count"] = 1
             subreddit_data["Users"][user]["Threads Participated"] = [submission]
 
-            subreddit_data["Users"][user]["Flair"] = change_flair(
+            subreddit_data["Users"][user]["Flair"] = flair_creator(
                 comment.author_flair_text, subreddit_data["Users"][user]["TLC Count"])
             print("Not found, created for next time!")
 
@@ -138,8 +136,8 @@ def main(r):
             if "contribution" not in comment.submission.link_flair_text.lower():
                 continue
 
-            # Pass this to user_tracker, to add this to the users stats.
-            user_tracker(comment)
+            # Pass this to track_user, to add this to the users stats.
+            track_user(comment)
         # After updating, sets all user flairs.
         set_flair(subreddit)
         # Waits one minute
