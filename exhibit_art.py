@@ -30,6 +30,11 @@ def add_comment(comment):
 
 
 def change_flair(flair_text, tlc_count):
+    """
+    :param flair_text: Old Flair Text
+    :param tlc_count: Count of top level comments user has.
+    :return: New flair text in format "<alpha> - <number>" or "<number>"
+    """
     try:
         flair = flair_text.split(" - ")[0] + " - " + str(tlc_count)
         if not flair_text.isalpha():
@@ -40,6 +45,9 @@ def change_flair(flair_text, tlc_count):
 
 
 def set_flair(subreddit):
+    """
+    Modifies all flairs in json file to values in format <alpha> - <number> or <number>
+    """
     with open(config.filename, "r") as f:
         subreddit_data = json.load(f)
         for user in subreddit_data['Users']:
