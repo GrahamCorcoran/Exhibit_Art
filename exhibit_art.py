@@ -59,19 +59,27 @@ def comment_check(commentid):
         return True if commentid in subreddit_data["Comments"] else False
 
 
-def user_tracker(author):
+def user_tracker(comment):
     with open(config.filename, "r") as f:
-        user = str(author)
+
+        user = str(comment.author)
+        submission = str(comment.submission)
         subreddit_data = json.load(f)
+
         if user in subreddit_data["Users"]:
             subreddit_data["Users"][user]["TLC Count"] += 1
             subreddit_data["Users"][user]["Flair"] = "Testity Test"
+            if submission not in subreddit_data["Users"][user]["Threads Participated"]:
+                subreddit_data["Users"][user]["Threads Participated"].append(submission)
             print("Found!")
+
         else:
             subreddit_data["Users"][user] = {}
             subreddit_data["Users"][user]["TLC Count"] = 1
             subreddit_data["Users"][user]["Flair"] = "Testity test"
+            subreddit_data["Users"][user]["Threads Participated"] = [submission]
             print("Not found, created for next time!")
+
         write_to_json(subreddit_data)
     pass
 
@@ -79,7 +87,7 @@ def user_tracker(author):
 # Main function very incomplete.
 def main(r):
     subreddit = r.subreddit("Exhibit_Art")
-    for comment in subreddit.comments(limit=100):
+    for comment in subreddit.comments(limit=1000):
         # If comment already has been worked; continues to next.
         if comment_check(str(comment)):
             continue
@@ -92,11 +100,8 @@ def main(r):
         # ** This also causes massive slowdown, find out if there's a way to fix that.
         if "contribution" not in comment.submission.link_flair_text.lower():
             continue
-        print("We've passed all our validation so far.")
-        user_tracker(comment.author)
-
-
-        print("This is a top level comment.")
+        # Pass this to user_tracker, to add this to the users stats.
+        user_tracker(comment)
 
 
 
