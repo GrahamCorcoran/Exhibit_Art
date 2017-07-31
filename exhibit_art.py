@@ -138,8 +138,9 @@ def main(r):
     set_flair(subreddit)
 
 
-r = login()
-main(r)
+if __name__ == '__main__':
+    r = login()
+    main(r)
 
 
 
