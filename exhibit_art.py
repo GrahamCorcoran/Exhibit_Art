@@ -143,9 +143,7 @@ def main(r):
 
 
 r = login()
-
-while True:
-    main(r)
+main(r)
 
 
 
