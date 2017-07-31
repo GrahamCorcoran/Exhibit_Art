@@ -80,44 +80,47 @@ def has_comment(commentid):
         return commentid in subreddit_data["Comments"]
 
 
+def existing_user(user, comment, subreddit_data, submission):
+    if submission not in subreddit_data["Users"][user]["Threads Participated"]:
+        subreddit_data["Users"][user]["Threads Participated"].append(submission)
+
+    subreddit_data["Users"][user]["TLC Count"] = len(
+        subreddit_data["Users"][user]["Threads Participated"])
+
+    subreddit_data["Users"][user]["Flair"] = get_flair(
+        comment.author_flair_text, subreddit_data["Users"][user]["TLC Count"])
+
+
+def new_user(user, comment, subreddit_data, submission):
+    subreddit_data["Users"][user] = {}
+    subreddit_data["Users"][user]["TLC Count"] = 1
+    subreddit_data["Users"][user]["Threads Participated"] = [submission]
+
+    subreddit_data["Users"][user]["Flair"] = get_flair(
+        comment.author_flair_text, subreddit_data["Users"][user]["TLC Count"])
+
+
 def track_user(comment):
     user = str(comment.author)
     submission = str(comment.submission)
-    with load(config.filename) as subreddit_data:
 
+    with load(config.filename) as subreddit_data:
         # If a user already exists
         if user in subreddit_data["Users"]:
-            if submission not in subreddit_data["Users"][user]["Threads Participated"]:
-                subreddit_data["Users"][user]["Threads Participated"].append(submission)
-
-            subreddit_data["Users"][user]["TLC Count"] = len(
-                subreddit_data["Users"][user]["Threads Participated"])
-
-            subreddit_data["Users"][user]["Flair"] = get_flair(
-                comment.author_flair_text, subreddit_data["Users"][user]["TLC Count"])
-            print("Found!")
+            existing_user(user, comment, subreddit_data, submission)
 
         # Creating a user for the first time.
         else:
-            subreddit_data["Users"][user] = {}
-            subreddit_data["Users"][user]["TLC Count"] = 1
-            subreddit_data["Users"][user]["Threads Participated"] = [submission]
-
-            subreddit_data["Users"][user]["Flair"] = get_flair(
-                comment.author_flair_text, subreddit_data["Users"][user]["TLC Count"])
-            print("Not found, created for next time!")
+            new_user(user, comment, subreddit_data, submission)
 
 
 def main(r):
     try:
         subreddit = r.subreddit("Exhibit_Art")
-        for comment in subreddit.comments(limit=60):
+        for comment in subreddit.comments(limit=1000):
             # If comment already has been worked; continues to next.
             if has_comment(str(comment)):
                 continue
-
-            # Adds comment to list of worked comments.
-            add_comment(str(comment))
 
             # If comment isn't top level comment, ignores.
             if not comment.is_root:
@@ -128,18 +131,26 @@ def main(r):
             if "contribution" not in comment.submission.link_flair_text.lower():
                 continue
 
+            # Adds comment to list of worked comments.
+            add_comment(str(comment))
+
             # Pass this to track_user, to add this to the users stats.
             track_user(comment)
+
         # After updating, sets all user flairs.
         set_flair(subreddit)
+
         # Waits one minute
         time.sleep(60)
+
     except Exception as e:
         print(e)
 
 
 r = login()
-main(r)
+
+while True:
+    main(r)
 
 
 
