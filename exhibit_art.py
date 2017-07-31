@@ -115,36 +115,31 @@ def track_user(comment):
 
 
 def main(r):
-    try:
-        subreddit = r.subreddit("Exhibit_Art")
-        for comment in subreddit.comments(limit=1000):
-            # If comment already has been worked; continues to next.
-            if has_comment(str(comment)):
-                continue
+    subreddit = r.subreddit("Exhibit_Art")
+    for comment in subreddit.comments(limit=1000):
+        # If comment already has been worked; continues to next.
+        if has_comment(str(comment)):
+            continue
 
-            # If comment isn't top level comment, ignores.
-            if not comment.is_root:
-                continue
+        # If comment isn't top level comment, ignores.
+        if not comment.is_root:
+            continue
 
-            # Verifies that this is in fact a weekly contribution thread.
-            # ** This also causes massive slowdown, find out if there's a way to fix that.
-            if "contribution" not in comment.submission.link_flair_text.lower():
-                continue
+        # Verifies that this is in fact a weekly contribution thread.
+        if "contribution" not in comment.submission.link_flair_text.lower():
+            continue
 
-            # Adds comment to list of worked comments.
-            add_comment(str(comment))
+        # Adds comment to list of worked comments.
+        add_comment(str(comment))
 
-            # Pass this to track_user, to add this to the users stats.
-            track_user(comment)
+        # Pass this to track_user, to add this to the users stats.
+        track_user(comment)
 
-        # After updating, sets all user flairs.
-        set_flair(subreddit)
+    # After updating, sets all user flairs.
+    set_flair(subreddit)
 
-        # Waits one minute
-        time.sleep(60)
-
-    except Exception as e:
-        print(e)
+    # Waits one minute
+    time.sleep(60)
 
 
 r = login()
