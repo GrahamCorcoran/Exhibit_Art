@@ -1,7 +1,6 @@
 import praw
 import config
 import json
-import time
 
 
 class load(object):
@@ -137,9 +136,6 @@ def main(r):
 
     # After updating, sets all user flairs.
     set_flair(subreddit)
-
-    # Waits one minute
-    time.sleep(60)
 
 
 r = login()
